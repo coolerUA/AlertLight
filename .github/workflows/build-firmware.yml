@@ -38,17 +38,27 @@ jobs:
       run: |
         mkdir -p firmware
 
+    - name: List build directory contents
+      run: |
+        echo "Build directory contents:"
+        ls -lah build/
+        echo ""
+        echo "Searching for bootloader and boot_app0 files..."
+        find ~/.arduino15/packages/esp32/ -name "bootloader*.bin" -o -name "boot_app0.bin" | head -20
+
     - name: Copy firmware files
       run: |
         # Main firmware
         cp build/AlertLight.ino.bin firmware/
 
-        # Bootloader (from ESP32 core)
-        cp ~/.arduino15/packages/esp32/hardware/esp32/3.0.0/tools/partitions/boot_app0.bin firmware/
-        cp ~/.arduino15/packages/esp32/hardware/esp32/3.0.0/tools/sdk/esp32s3/bin/bootloader_qio_80m.bin firmware/bootloader.bin
+        # Bootloader (generated during compile in ESP32 core 3.0+)
+        cp build/AlertLight.ino.bootloader.bin firmware/bootloader.bin
 
         # Partition table (generated during compile)
         cp build/AlertLight.ino.partitions.bin firmware/partitions.bin
+
+        # Boot app0 (from ESP32 core tools)
+        cp ~/.arduino15/packages/esp32/hardware/esp32/3.0.0/tools/partitions/boot_app0.bin firmware/
 
     - name: List firmware files
       run: |
