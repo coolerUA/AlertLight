@@ -1,0 +1,34 @@
+# Claude AI assistant
+.claude
+
+# Test and example data files
+*.json
+!UI_Mockup/**/*.json
+!manifest.json
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.tmp
+
+# Build artifacts
+build/
+*.o
+*.elf
+*.bin
+!firmware/*.bin
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# macOS
+.DS_Store
+
+# Temporary documentation
+*_FIX_*.md
+*_SUMMARY.md
+*_GUIDE.md
+*_EXPLANATION.md

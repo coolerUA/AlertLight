@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlertLight - Web Installer</title>
+    <meta name="description" content="Install AlertLight firmware directly to your ESP32-S3 device using your browser">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #1a202c;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .info-box {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            color: #4a5568;
+            padding: 4px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #48bb78;
+            font-weight: bold;
+        }
+
+        .requirements {
+            background: #fff5f5;
+            border-left-color: #fc8181;
+        }
+
+        .requirements li:before {
+            content: "⚠";
+            color: #f56565;
+        }
+
+        .install-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        esp-web-install-button {
+            display: inline-block;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .version {
+            color: #a0aec0;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚨</div>
+            <h1>AlertLight Web Installer</h1>
+            <p class="subtitle">
+                Flash AlertLight firmware directly to your ESP32-S3 device<br>
+                No software installation required - just use your Chrome browser!
+            </p>
+        </div>
+
+        <div class="info-box requirements">
+            <h3>Before You Start</h3>
+            <ul>
+                <li>Use Chrome, Edge, or Opera browser (Web Serial API required)</li>
+                <li>Have an ESP32-S3 device (QFN56, 8MB PSRAM, 16MB Flash)</li>
+                <li>Connect device via USB-C cable</li>
+                <li>Close Arduino IDE or other serial monitor programs</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h3>What Will Be Installed</h3>
+            <ul>
+                <li>AlertLight v1.0.0 firmware</li>
+                <li>Complete monitoring system for Ukrainian air alerts</li>
+                <li>Power outage schedule tracking (Yasno API)</li>
+                <li>RGB LED notifications with customizable colors</li>
+                <li>Web configuration interface on port 8080</li>
+                <li>1.47" display with three-screen LVGL UI</li>
+            </ul>
+        </div>
+
+        <div class="install-section">
+            <esp-web-install-button
+                manifest="./manifest.json"
+                install-supported
+                erase-first
+            >
+                <button slot="activate" style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 16px 32px;
+                    font-size: 18px;
+                    font-weight: 600;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.5)';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(102, 126, 234, 0.4)';">
+                    🚀 Install AlertLight
+                </button>
+                <span slot="unsupported" style="color: #e53e3e; font-weight: 500;">
+                    ⚠️ Your browser doesn't support Web Serial API. Please use Chrome, Edge, or Opera.
+                </span>
+                <span slot="not-allowed" style="color: #e53e3e; font-weight: 500;">
+                    ⚠️ Serial port access not allowed. Check browser permissions.
+                </span>
+            </esp-web-install-button>
+        </div>
+
+        <div class="info-box">
+            <h3>After Installation</h3>
+            <ul>
+                <li>Device will restart and create WiFi AP: <strong>AlertLight-Setup-[MAC]</strong></li>
+                <li>Connect to the AP and navigate to <strong>http://192.168.4.1:8080</strong></li>
+                <li>Configure your WiFi credentials and preferences</li>
+                <li>Device will connect to your network and start monitoring</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>
+                <a href="https://github.com/coolerUA/AlertLight" target="_blank">📖 Documentation</a> •
+                <a href="https://github.com/coolerUA/AlertLight/issues" target="_blank">🐛 Report Issue</a> •
+                <a href="https://github.com/coolerUA/AlertLight" target="_blank">⭐ Star on GitHub</a>
+            </p>
+            <p class="version">Version 1.0.0 • Made with ❤️ for Ukraine 🇺🇦</p>
+        </div>
+    </div>
+</body>
+</html>

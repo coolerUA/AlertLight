@@ -1,0 +1,104 @@
+name: Build Firmware
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v1
+
+    - name: Install ESP32 platform
+      run: |
+        arduino-cli config init
+        arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+        arduino-cli core update-index
+        arduino-cli core install esp32:esp32@3.0.0
+
+    - name: Install required libraries
+      run: |
+        arduino-cli lib install "lvgl@8.3.11"
+        arduino-cli lib install "ArduinoJson@7.0.4"
+        arduino-cli lib install "Adafruit NeoPixel@1.12.0"
+
+    - name: Compile firmware
+      run: |
+        arduino-cli compile --fqbn esp32:esp32:esp32s3:PartitionScheme=app3M_fat9M_16MB,FlashMode=qio,FlashSize=16M,PSRAM=opi,UploadSpeed=921600,DebugLevel=none --output-dir ./build AlertLight.ino
+
+    - name: Create firmware directory
+      run: |
+        mkdir -p firmware
+
+    - name: Copy firmware files
+      run: |
+        # Main firmware
+        cp build/AlertLight.ino.bin firmware/
+
+        # Bootloader (from ESP32 core)
+        cp ~/.arduino15/packages/esp32/hardware/esp32/3.0.0/tools/partitions/boot_app0.bin firmware/
+        cp ~/.arduino15/packages/esp32/hardware/esp32/3.0.0/tools/sdk/esp32s3/bin/bootloader_qio_80m.bin firmware/bootloader.bin
+
+        # Partition table (generated during compile)
+        cp build/AlertLight.ino.partitions.bin firmware/partitions.bin
+
+    - name: List firmware files
+      run: |
+        ls -lh firmware/
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          firmware/*.bin
+          manifest.json
+          install.html
+        body: |
+          ## AlertLight Firmware ${{ github.ref_name }}
+
+          ### 📦 Installation Methods
+
+          #### 🌐 Web Installer (Recommended)
+          1. Download `install.html` and `manifest.json` from this release
+          2. Download all `.bin` files and place them in a `firmware/` folder
+          3. Open `install.html` in Chrome/Edge browser
+          4. Click "Install AlertLight" and follow the prompts
+
+          #### 💻 Manual Installation
+          Use Arduino IDE or `esptool.py`:
+          ```bash
+          esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 \
+            --before default_reset --after hard_reset write_flash -z \
+            --flash_mode qio --flash_freq 80m --flash_size 16MB \
+            0x0 bootloader.bin \
+            0x8000 partitions.bin \
+            0xe000 boot_app0.bin \
+            0x10000 AlertLight.ino.bin
+          ```
+
+          ### ✨ Features
+          - Air alert monitoring (AJAX API)
+          - Power outage schedule tracking (Yasno API)
+          - RGB LED notifications
+          - Web configuration interface
+          - 1.47" LVGL display
+
+          Made with ❤️ for Ukraine 🇺🇦
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload firmware artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: AlertLight-firmware-${{ github.ref_name || github.sha }}
+        path: firmware/
+        retention-days: 90
