@@ -1,9 +1,15 @@
+# StandWithUkraine
+
+[![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct.svg)](https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md)
+
+
 # AlertLight - ESP32-S3 Air Alert & Power Outage Monitor
 
 ![ESP32-S3](https://img.shields.io/badge/ESP32-S3-blue)
 ![LVGL](https://img.shields.io/badge/LVGL-8.x-green)
 ![Status](https://img.shields.io/badge/Status-Production-success)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+[![StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md)
 
 A smart monitoring device for Ukrainian air alerts and power outage schedules, featuring a 1.47" color display and RGB LED notifications.
 
