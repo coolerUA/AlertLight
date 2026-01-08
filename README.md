@@ -336,7 +336,7 @@ For issues and questions:
 
 ## 🔄 Version History
 
-### v1.0.0 (Current)
+### v1.0.1 (Current)
 - ✅ Complete implementation of all core features
 - ✅ Three-screen LVGL UI
 - ✅ Dual API integration (Alert + Power Outage)

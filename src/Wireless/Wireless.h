@@ -1,5 +1,6 @@
 #pragma once
 #include "WiFi.h"
+#include <esp_wifi.h>
 #include <BLEDevice.h>
 #include <BLEScan.h>
 

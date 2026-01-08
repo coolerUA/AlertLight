@@ -485,4 +485,4 @@ All major features have been implemented and tested. The device is fully functio
 - Automatic updates and state tracking
 
 **Last Updated**: 2025-12-30
-**Version**: 1.0.0
+**Version**: 1.0.1

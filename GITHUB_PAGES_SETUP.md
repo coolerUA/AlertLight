@@ -77,10 +77,10 @@ The web installer needs firmware files from a GitHub Release. Create one:
 
 ```bash
 # Tag the current commit
-git tag -a v1.0.0 -m "Release v1.0.0 with web installer"
+git tag -a v1.0.1 -m "Release v1.0.1 with web installer"
 
 # Push the tag to GitHub
-git push origin v1.0.0
+git push origin v1.0.1
 ```
 
 This triggers the GitHub Actions workflow that:
@@ -98,7 +98,7 @@ This triggers the GitHub Actions workflow that:
 
 4. Go to **Releases** tab
 
-5. Verify that v1.0.0 release contains:
+5. Verify that v1.0.1 release contains:
    - `bootloader.bin`
    - `partitions.bin`
    - `boot_app0.bin`
@@ -190,13 +190,13 @@ git push origin v1.0.1
 ### Web Installer Shows "Failed to download firmware"
 
 **Causes:**
-1. Release doesn't exist yet → Create release with `git tag v1.0.0 && git push origin v1.0.0`
+1. Release doesn't exist yet → Create release with `git tag v1.0.1 && git push origin v1.0.1`
 2. Release doesn't have .bin files → Wait for GitHub Actions workflow to complete
 3. Wrong version in manifest.json → Check URLs match the release tag
 
 **Fix:**
 - Go to Releases tab
-- Verify v1.0.0 (or your version) exists
+- Verify v1.0.1 (or your version) exists
 - Verify it has 4 .bin files
 - Check manifest.json URLs match the release tag
 
@@ -264,7 +264,7 @@ Before going live, verify:
 - [ ] Source is set to "main" branch, root folder
 - [ ] Site appears at https://coolerUA.github.io/AlertLight/
 - [ ] install.html loads correctly
-- [ ] At least one release (v1.0.0) exists
+- [ ] At least one release (v1.0.1) exists
 - [ ] Release contains all 4 .bin files
 - [ ] manifest.json points to correct release URLs
 - [ ] Web installer can flash a test device

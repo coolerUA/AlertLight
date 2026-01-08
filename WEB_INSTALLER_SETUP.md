@@ -58,10 +58,10 @@ The GitHub Actions workflow automatically builds firmware when you create a rele
 
 ```bash
 # Tag the current commit
-git tag -a v1.0.0 -m "Release version 1.0.0"
+git tag -a v1.0.1 -m "Release version 1.0.1"
 
 # Push the tag to GitHub
-git push origin v1.0.0
+git push origin v1.0.1
 ```
 
 This triggers the `build-firmware.yml` workflow which:
@@ -77,25 +77,25 @@ The `manifest.json` needs to point to the firmware files from the GitHub Release
 ```json
 {
   "name": "AlertLight",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.0/bootloader.bin",
+          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.1/bootloader.bin",
           "offset": 0
         },
         {
-          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.0/partitions.bin",
+          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.1/partitions.bin",
           "offset": 32768
         },
         {
-          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.0/boot_app0.bin",
+          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.1/boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.0/AlertLight.ino.bin",
+          "path": "https://github.com/coolerUA/AlertLight/releases/download/v1.0.1/AlertLight.ino.bin",
           "offset": 65536
         }
       ]

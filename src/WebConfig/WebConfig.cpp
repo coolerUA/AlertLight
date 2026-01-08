@@ -120,6 +120,12 @@ bool WebConfigManager::connectToWiFi(unsigned long timeout_ms) {
     delay(100);
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(true);
+    WiFi.persistent(false);  // Avoid flash wear
+
+    // CRITICAL: Configure WiFi for maximum reliability
+    WiFi.setSleep(false);  // Disable sleep mode for better scanning
+    WiFi.setTxPower(WIFI_POWER_19_5dBm);  // Maximum transmit power
+    esp_wifi_set_ps(WIFI_PS_NONE);  // Disable power saving
 
     // Configure static IP if enabled, otherwise use DHCP
     if (cfg.use_static_ip) {
@@ -141,7 +147,8 @@ bool WebConfigManager::connectToWiFi(unsigned long timeout_ms) {
 
     // Extended scan time for environments with many networks (52+)
     // 2000ms per channel ensures thorough discovery of all networks
-    int networks = WiFi.scanNetworks(false, false, false, 2000); // async=false, show_hidden=false, passive=false, max_ms_per_chan=2000
+    // IMPORTANT: show_hidden=true to find hidden SSIDs
+    int networks = WiFi.scanNetworks(false, true, false, 2000); // async=false, show_hidden=true, passive=false, max_ms_per_chan=2000
 
     lastScanAttempt = millis();
 
@@ -160,8 +167,9 @@ bool WebConfigManager::connectToWiFi(unsigned long timeout_ms) {
     int8_t targetRSSI = 0;
     const char* targetEncryption = "";
 
-    // Check up to 30 networks (balance between finding networks and memory usage)
-    int maxCheck = min(networks, 50);
+    // Check ALL networks to ensure we find the target SSID
+    // Previous limit of 50 was causing networks to be missed in dense WiFi environments
+    int maxCheck = networks;
 
     addLog("Checking networks...");
     delay(300);
@@ -202,9 +210,11 @@ bool WebConfigManager::connectToWiFi(unsigned long timeout_ms) {
     WiFi.scanDelete();
 
     if (!ssidFound) {
-        snprintf(buf, sizeof(buf), "SSID '%s' not found in first %d networks", cfg.wifi_ssid, maxCheck);
+        snprintf(buf, sizeof(buf), "SSID '%s' not found in scan (may be hidden network)", cfg.wifi_ssid, maxCheck);
         addLog(buf);
-        return false;
+        addLog("Attempting connection anyway...");
+        // Don't return false here - hidden networks won't appear in scan
+        // but WiFi.begin() can still connect to them
     }
 
     addLog("Connecting to: " + String(cfg.wifi_ssid));
@@ -251,6 +261,11 @@ bool WebConfigManager::connectToWiFi(unsigned long timeout_ms) {
             default: break;
         }
         addLog("WiFi connection failed - " + statusMsg);
+
+        // Clean up - disconnect to ensure WiFi is in known state
+        WiFi.disconnect(true);
+        delay(100);
+
         return false;
     }
 }
@@ -979,7 +994,13 @@ void WebConfigManager::checkWiFiStatus() {
                     // Update UI
                     AlertLight_UI_Update_WiFi_Blink(false);  // Stop blinking
                 } else {
-                    addLog("Still not connected. Staying in AP mode");
+                    addLog("Still not connected. Ensuring AP mode is active");
+
+                    // Ensure AP mode is still running after failed connection attempt
+                    if (WiFi.getMode() != WIFI_AP && WiFi.getMode() != WIFI_AP_STA) {
+                        addLog("AP mode was stopped, restarting...");
+                        startAPMode();
+                    }
                 }
             }
         }
