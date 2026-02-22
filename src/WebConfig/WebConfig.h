@@ -62,6 +62,9 @@ private:
     void handleNTP();
     void handleSyncNTP();
     void handleTestRGB();
+    void handleYasnoStreets();
+    void handleYasnoHouses();
+    void handleYasnoGroup();
 
     // Helper functions
     void addLog(const String& message);

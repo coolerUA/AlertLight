@@ -57,6 +57,9 @@ void WebConfigManager::begin() {
     server.on("/ntp", [this]() { this->handleNTP(); });
     server.on("/sync_ntp", [this]() { this->handleSyncNTP(); });
     server.on("/test_rgb", [this]() { this->handleTestRGB(); });
+    server.on("/api/yasno/streets", [this]() { this->handleYasnoStreets(); });
+    server.on("/api/yasno/houses", [this]() { this->handleYasnoHouses(); });
+    server.on("/api/yasno/group", [this]() { this->handleYasnoGroup(); });
     server.onNotFound([this]() { this->handleNotFound(); });
 
     server.begin();
@@ -629,24 +632,52 @@ void WebConfigManager::handleLightConfig() {
     html += "<h2>Light Outage Settings</h2>";
     html += "<form action='/save_light' method='POST'>";
 
+    // --- Address lookup section ---
+    html += "<h3>Find queue by address</h3>";
+
+    if (cfg.yasno_street_id > 0) {
+        html += "<div class='status' style='margin-bottom:15px; border-left:3px solid #00ff00; padding-left:10px;'>";
+        html += "<strong>Current address:</strong> " + String(cfg.yasno_street_name);
+        if (cfg.yasno_house_id > 0) {
+            html += ", house " + String(cfg.yasno_house_name);
+        }
+        html += " &rarr; Queue: <strong style='color:#00ff00;'>" + String(cfg.light_queue) + "</strong>";
+        html += "</div>";
+    }
+
     html += "<div class='form-group'>";
-    html += "<label>Light Outage API URL:</label>";
-    html += "<input type='text' name='api_url' value='" + String(cfg.light_api_url) + "' required>";
+    html += "<label>Street (min. 4 characters):</label>";
+    html += "<input type='text' id='street_query' placeholder='e.g. Хрещатик...' oninput='onStreetInput()'>";
+    html += "</div>";
+
+    html += "<div id='street_results' style='display:none; max-height:220px; overflow-y:auto; background:#2a2a2a; border-radius:5px; margin-bottom:10px;'></div>";
+
+    html += "<div id='house_section' style='display:none;'>";
+    html += "<div class='form-group'>";
+    html += "<label>House number:</label>";
+    html += "<input type='text' id='house_query' placeholder='e.g. 1, 2' oninput='onHouseInput()'>";
+    html += "</div>";
+    html += "<div id='house_results' style='display:none; max-height:220px; overflow-y:auto; background:#2a2a2a; border-radius:5px; margin-bottom:10px;'></div>";
+    html += "</div>";
+
+    html += "<div id='queue_result' style='display:none; padding:10px; background:#1a3a1a; border-radius:5px; margin-bottom:10px;'></div>";
+
+    html += "<input type='hidden' name='yasno_street_id' id='yasno_street_id' value='" + String(cfg.yasno_street_id) + "'>";
+    html += "<input type='hidden' name='yasno_street_name' id='yasno_street_name' value='" + String(cfg.yasno_street_name) + "'>";
+    html += "<input type='hidden' name='yasno_house_id' id='yasno_house_id' value='" + String(cfg.yasno_house_id) + "'>";
+    html += "<input type='hidden' name='yasno_house_name' id='yasno_house_name' value='" + String(cfg.yasno_house_name) + "'>";
+
+    // --- Manual settings ---
+    html += "<h3>Manual settings</h3>";
+
+    html += "<div class='form-group'>";
+    html += "<label>Queue (e.g. 6.2 or 32.1):</label>";
+    html += "<input type='text' name='queue' id='queue_input' value='" + String(cfg.light_queue) + "' required pattern='[0-9]+\\.[0-9]+'>";
     html += "</div>";
 
     html += "<div class='form-group'>";
-    html += "<label>Light Queue:</label>";
-    html += "<select name='queue' required>";
-    const char* queues[] = {"1.1", "1.2", "2.1", "2.2", "3.1", "3.2",
-                            "4.1", "4.2", "5.1", "5.2", "6.1", "6.2"};
-    for (int i = 0; i < 12; i++) {
-        html += "<option value='" + String(queues[i]) + "'";
-        if (String(cfg.light_queue) == String(queues[i])) {
-            html += " selected";
-        }
-        html += ">Queue " + String(queues[i]) + "</option>";
-    }
-    html += "</select>";
+    html += "<label>Light Outage API URL:</label>";
+    html += "<input type='text' name='api_url' value='" + String(cfg.light_api_url) + "' required>";
     html += "</div>";
 
     html += "<div class='form-group'>";
@@ -656,6 +687,80 @@ void WebConfigManager::handleLightConfig() {
 
     html += "<button type='submit'>Save Light Settings</button>";
     html += "</form>";
+
+    // JavaScript for address lookup (debounced, no search button)
+    html += "<script>";
+    html += "var selStreetId=0,strTimer=null,hseTimer=null;";
+    html += "function onStreetInput(){";
+    html += "  clearTimeout(strTimer);";
+    html += "  var q=document.getElementById('street_query').value.trim();";
+    html += "  var r=document.getElementById('street_results');";
+    html += "  if(q.length<4){r.style.display='none';return;}";
+    html += "  strTimer=setTimeout(function(){searchStreets(q);},400);";
+    html += "}";
+    html += "function searchStreets(q){";
+    html += "  var r=document.getElementById('street_results');";
+    html += "  r.innerHTML='<div style=\"padding:10px;color:#aaa\">Searching...</div>';";
+    html += "  r.style.display='block';";
+    html += "  fetch('/api/yasno/streets?q='+encodeURIComponent(q)).then(function(res){return res.json();}).then(function(data){";
+    html += "    if(!data||!data.length){r.innerHTML='<div style=\"padding:10px;color:#aaa\">No results</div>';return;}";
+    html += "    var h='';";
+    html += "    data.forEach(function(item){";
+    html += "      h+='<div class=\"network-item\" onclick=\"selectStreet('+item.id+',this.dataset.v)\" data-v=\"'+item.value.replace(/\"/g,'&quot;')+'\">'";
+    html += "        +'<div class=\"network-name\">'+item.value+'</div></div>';";
+    html += "    });";
+    html += "    r.innerHTML=h;";
+    html += "  }).catch(function(e){r.innerHTML='<div style=\"padding:10px;color:#f00\">Error: '+e+'</div>';});";
+    html += "}";
+    html += "function selectStreet(id,name){";
+    html += "  selStreetId=id;";
+    html += "  document.getElementById('yasno_street_id').value=id;";
+    html += "  document.getElementById('yasno_street_name').value=name;";
+    html += "  document.getElementById('street_results').innerHTML='<div style=\"padding:10px;color:#0f0\">&#10003; '+name+'</div>';";
+    html += "  document.getElementById('house_section').style.display='block';";
+    html += "  document.getElementById('house_query').value='';";
+    html += "  document.getElementById('house_results').style.display='none';";
+    html += "  document.getElementById('queue_result').style.display='none';";
+    html += "}";
+    html += "function onHouseInput(){";
+    html += "  clearTimeout(hseTimer);";
+    html += "  var q=document.getElementById('house_query').value.trim();";
+    html += "  var hr=document.getElementById('house_results');";
+    html += "  if(q.length<1){hr.style.display='none';return;}";
+    html += "  hseTimer=setTimeout(function(){searchHouses(q);},400);";
+    html += "}";
+    html += "function searchHouses(q){";
+    html += "  var hr=document.getElementById('house_results');";
+    html += "  hr.innerHTML='<div style=\"padding:10px;color:#aaa\">Searching...</div>';";
+    html += "  hr.style.display='block';";
+    html += "  fetch('/api/yasno/houses?streetId='+selStreetId+'&q='+encodeURIComponent(q)).then(function(res){return res.json();}).then(function(data){";
+    html += "    if(!data||!data.length){hr.innerHTML='<div style=\"padding:10px;color:#aaa\">No results for &ldquo;'+q+'&rdquo;</div>';return;}";
+    html += "    var h='';";
+    html += "    data.forEach(function(item){";
+    html += "      h+='<div class=\"network-item\" onclick=\"selectHouse('+item.id+',this.dataset.v)\" data-v=\"'+item.value.replace(/\"/g,'&quot;')+'\">'";
+    html += "        +'<div class=\"network-name\">'+item.value+'</div></div>';";
+    html += "    });";
+    html += "    hr.innerHTML=h;";
+    html += "  }).catch(function(e){hr.innerHTML='<div style=\"padding:10px;color:#f00\">Error: '+e+'</div>';});";
+    html += "}";
+    html += "function selectHouse(id,name){";
+    html += "  document.getElementById('yasno_house_id').value=id;";
+    html += "  document.getElementById('yasno_house_name').value=name;";
+    html += "  document.getElementById('house_results').innerHTML='<div style=\"padding:10px;color:#0f0\">&#10003; '+name+'</div>';";
+    html += "  var qr=document.getElementById('queue_result');";
+    html += "  qr.innerHTML='<span style=\"color:#aaa\">Detecting queue...</span>';";
+    html += "  qr.style.display='block';";
+    html += "  fetch('/api/yasno/group?streetId='+selStreetId+'&houseId='+id).then(function(res){return res.json();}).then(function(data){";
+    html += "    if(data.group!==undefined&&data.subgroup!==undefined){";
+    html += "      var q=data.group+'.'+data.subgroup;";
+    html += "      qr.innerHTML='Queue detected: <strong style=\"color:#00ff00;font-size:1.2em;\">'+q+'</strong>';";
+    html += "      document.getElementById('queue_input').value=q;";
+    html += "    } else {";
+    html += "      qr.innerHTML='<span style=\"color:#f00\">Could not detect queue</span>';";
+    html += "    }";
+    html += "  }).catch(function(e){qr.innerHTML='<span style=\"color:#f00\">Error: '+e+'</span>';});";
+    html += "}";
+    html += "</script>";
 
     html += generateFooter();
     server.send(200, "text/html", html);
@@ -851,6 +956,18 @@ void WebConfigManager::handleSaveLight() {
     }
     if (server.hasArg("interval")) {
         cfg.light_check_interval = server.arg("interval").toInt();
+    }
+    if (server.hasArg("yasno_street_id")) {
+        cfg.yasno_street_id = server.arg("yasno_street_id").toInt();
+    }
+    if (server.hasArg("yasno_street_name")) {
+        strncpy(cfg.yasno_street_name, server.arg("yasno_street_name").c_str(), sizeof(cfg.yasno_street_name) - 1);
+    }
+    if (server.hasArg("yasno_house_id")) {
+        cfg.yasno_house_id = server.arg("yasno_house_id").toInt();
+    }
+    if (server.hasArg("yasno_house_name")) {
+        strncpy(cfg.yasno_house_name, server.arg("yasno_house_name").c_str(), sizeof(cfg.yasno_house_name) - 1);
     }
 
     configManager.save();
@@ -1198,6 +1315,105 @@ void WebConfigManager::handleTestAlert() {
 void WebConfigManager::handleTestLight() {
     lightManager.forceCheck();
     server.send(200, "text/plain", "Light outage API test triggered");
+}
+
+static String urlEncode(const String& str) {
+    String encoded = "";
+    for (size_t i = 0; i < str.length(); i++) {
+        unsigned char c = (unsigned char)str[i];
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '~') {
+            encoded += (char)c;
+        } else {
+            char hex[4];
+            snprintf(hex, sizeof(hex), "%%%02X", c);
+            encoded += hex;
+        }
+    }
+    return encoded;
+}
+
+static void parseYasnoIds(const char* lightApiUrl, uint16_t& regionId, uint32_t& dsoId) {
+    regionId = 25;
+    dsoId = 902;
+    const char* r = strstr(lightApiUrl, "/regions/");
+    if (r) regionId = (uint16_t)atoi(r + 9);
+    const char* d = strstr(lightApiUrl, "/dsos/");
+    if (d) dsoId = (uint32_t)atoi(d + 6);
+}
+
+void WebConfigManager::handleYasnoStreets() {
+    if (!server.hasArg("q") || server.arg("q").length() < 2) {
+        server.send(400, "application/json", "{\"error\":\"Query too short\"}");
+        return;
+    }
+    AlertLightConfig& cfg = configManager.getConfig();
+    uint16_t regionId; uint32_t dsoId;
+    parseYasnoIds(cfg.light_api_url, regionId, dsoId);
+
+    String url = "https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2/streets?regionId=";
+    url += String(regionId) + "&query=" + urlEncode(server.arg("q")) + "&dsoId=" + String(dsoId);
+
+    HTTPClient http;
+    http.begin(url);
+    http.setTimeout(10000);
+    http.addHeader("Accept", "application/json");
+    http.addHeader("Origin", "https://static.yasno.ua");
+    http.addHeader("Referer", "https://static.yasno.ua/");
+    int code = http.GET();
+    String body = (code == 200) ? http.getString() : "[]";
+    http.end();
+    server.send(200, "application/json", body);
+}
+
+void WebConfigManager::handleYasnoHouses() {
+    if (!server.hasArg("streetId")) {
+        server.send(400, "application/json", "{\"error\":\"Missing streetId\"}");
+        return;
+    }
+    AlertLightConfig& cfg = configManager.getConfig();
+    uint16_t regionId; uint32_t dsoId;
+    parseYasnoIds(cfg.light_api_url, regionId, dsoId);
+
+    String houseQuery = server.hasArg("q") ? urlEncode(server.arg("q")) : "";
+    String url = "https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2/houses?regionId=";
+    url += String(regionId) + "&streetId=" + server.arg("streetId") + "&query=" + houseQuery + "&dsoId=" + String(dsoId);
+
+    HTTPClient http;
+    http.begin(url);
+    http.setTimeout(10000);
+    http.addHeader("Accept", "application/json");
+    http.addHeader("Origin", "https://static.yasno.ua");
+    http.addHeader("Referer", "https://static.yasno.ua/");
+    int code = http.GET();
+    String body = (code == 200) ? http.getString() : "[]";
+    http.end();
+    server.send(200, "application/json", body);
+}
+
+void WebConfigManager::handleYasnoGroup() {
+    if (!server.hasArg("streetId") || !server.hasArg("houseId")) {
+        server.send(400, "application/json", "{\"error\":\"Missing streetId or houseId\"}");
+        return;
+    }
+    AlertLightConfig& cfg = configManager.getConfig();
+    uint16_t regionId; uint32_t dsoId;
+    parseYasnoIds(cfg.light_api_url, regionId, dsoId);
+
+    String url = "https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2/group?regionId=";
+    url += String(regionId) + "&streetId=" + server.arg("streetId") +
+           "&houseId=" + server.arg("houseId") + "&dsoId=" + String(dsoId);
+
+    HTTPClient http;
+    http.begin(url);
+    http.setTimeout(10000);
+    http.addHeader("Accept", "application/json");
+    http.addHeader("Origin", "https://static.yasno.ua");
+    http.addHeader("Referer", "https://static.yasno.ua/");
+    int code = http.GET();
+    String body = (code == 200) ? http.getString() : "{\"error\":\"API error\"}";
+    http.end();
+    server.send(200, "application/json", body);
 }
 
 void WebConfigManager::handleTestRGB() {

@@ -27,6 +27,12 @@ struct AlertLightConfig {
     char light_queue[8];
     uint32_t light_check_interval;  // seconds
 
+    // Yasno address selection (persisted for display and reuse)
+    uint32_t yasno_street_id;
+    char yasno_street_name[64];
+    uint32_t yasno_house_id;
+    char yasno_house_name[16];
+
     // RGB LED Settings
     uint8_t ambient_brightness;     // 0-100%
     uint32_t color_no_alert;        // RGB hex color

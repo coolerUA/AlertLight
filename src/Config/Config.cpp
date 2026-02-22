@@ -38,6 +38,12 @@ void ConfigManager::setDefaults() {
     strcpy(config.light_queue, "6.2");
     config.light_check_interval = 900;  // 15 minutes
 
+    // Yasno address selection defaults
+    config.yasno_street_id = 0;
+    strcpy(config.yasno_street_name, "");
+    config.yasno_house_id = 0;
+    strcpy(config.yasno_house_name, "");
+
     // RGB LED defaults
     config.ambient_brightness = 10;  // 10%
     config.color_no_alert = 0x00FF00;  // Green
@@ -83,6 +89,12 @@ bool ConfigManager::load() {
     preferences.getString("light_queue", config.light_queue, sizeof(config.light_queue));
     config.light_check_interval = preferences.getUInt("light_interval", 900);
 
+    // Load Yasno address selection
+    config.yasno_street_id = preferences.getUInt("yasno_str_id", 0);
+    preferences.getString("yasno_str_nm", config.yasno_street_name, sizeof(config.yasno_street_name));
+    config.yasno_house_id = preferences.getUInt("yasno_hse_id", 0);
+    preferences.getString("yasno_hse_nm", config.yasno_house_name, sizeof(config.yasno_house_name));
+
     // Load RGB LED settings
     config.ambient_brightness = preferences.getUChar("rgb_ambient", 10);
     config.color_no_alert = preferences.getUInt("rgb_no_alert", 0x00FF00);
@@ -127,6 +139,12 @@ bool ConfigManager::save() {
     preferences.putString("light_url", config.light_api_url);
     preferences.putString("light_queue", config.light_queue);
     preferences.putUInt("light_interval", config.light_check_interval);
+
+    // Save Yasno address selection
+    preferences.putUInt("yasno_str_id", config.yasno_street_id);
+    preferences.putString("yasno_str_nm", config.yasno_street_name);
+    preferences.putUInt("yasno_hse_id", config.yasno_house_id);
+    preferences.putString("yasno_hse_nm", config.yasno_house_name);
 
     // Save RGB LED settings
     preferences.putUChar("rgb_ambient", config.ambient_brightness);
